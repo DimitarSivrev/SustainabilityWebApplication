@@ -1,0 +1,833 @@
+<!-- Jude -->
+<!-- This took way longer than it looks -->
+<!-- Jude : Navigation bars, page content and layout dislaying -->
+<!--        Also did the css layout/behaviour files although they are static so credited here-->
+<!-- Dash : Prototyped code for the contact us-->
+<!-- Dimitar : Map section and associated scripting-->
+
+
+<!-- PARAMETERS: -->
+<!-- 
+    MAP RELATED CONTENT
+    fountain_locations : the list of fountain locaiton dictionaries,
+    bus_stop_locations : the list of bus stop location dictionaries
+         bin_locations : the list of bin location dictionaries
+                  maze : a list of strings showing that show the data on the map read form the static png file
+    USER RELATED DATA
+            usage_data : a dictionary of the stats of every user on the database
+          display_name : a string that is the display name of the current logged in user
+         points_wallet : the amount of points the user has to spend, only this decreases when they buy things
+           points_week : the amount of points the user has earned this week
+       points_lifetime : the amonunt of points the user has earned playing th game total
+                streak : current_user_data.streak,
+              is_staff : a boolean determining if staff utility options should be shown or not
+     current_challenge : the current challenge issued to te user
+        challenge_done : a boolean value determining if the user has completed their challenge or not
+    SITE UTILITIES
+             shop_list : the list of themes that are availiable for the user to buy, the ones they own already are not displayed
+                scores : the current list of scores for the leaderboard
+        closest_things : a list of the closest items for easy access on the front page
+         location_form : the form that is filled in to submit a location
+             submitted : a boolean showing whether or not the form is submitted
+    SETTINGS
+                themes : the list of themes the user currently owns so that they may switch between them
+                colour : the current theme equipped by the user
+    -->
+
+<!DOCTYPE html>
+<html>
+    <!-- These load the cookies and static files so that the page can
+        load the data for the current user and load static files such as scripts and images-->
+    <!-- We use whitenoise to handle static files outside of DEBUG and insecure running modes-->
+    {% load static %} {% csrf_token %}
+    <head>
+        <title>iWEB test homepage</title>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1" />
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="{% static 'global/index.css' %}"/>
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="{% static 'global/lib.css' %}" />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Montserrat" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+            />
+
+        <meta
+            http-equiv="Cache-Control"
+            content="no-cache, no-store, must-revalidate" />
+
+        <!-- Only objects that require data from the database should be in here -->
+        <style>
+            html * {
+                color: {{colour.font}}; /* THIS IS THE MAIN FONT COLOUR */
+            }
+
+            /* The navigation menu links */
+            .sidenav a {
+                color: #818181;
+            }
+
+            /* When you mouse over the navigation links, change their color */
+            .sidenav a:hover {
+                color: #004d99;
+            }
+
+            .icon-bar {
+                background-color: #555; /* Dark-grey background */
+            }
+
+            .icon-bar a:hover {
+                background-color: red; /* Add a hover color - doesn't work */
+            }
+
+            .active {
+                background-color: #4933b5; /* Add an active/current color */
+            }
+
+            .sidebar {
+                background: {{colour.icons}}; /* colour of fonts and icons */
+            }
+
+            #main {
+                background-color: {{colour.background}}; /*main page colour*/
+            }
+
+            .row {
+                border-bottom: 1px solid #AFAFAF;
+            }
+            .row:nth-child(1) {
+                background: gold;
+            }
+            
+            .row:nth-child(2) {
+                background: #c0c0c0;
+            }
+            
+            .row:nth-child(3) {
+                background: #cd7f32;
+            }
+            .user {
+                background-color: red;
+            }
+
+            .water-fountain-button {
+                background-color: blue;
+                color: white;
+            }
+
+            .bus-stop-button {
+                background-color: red;
+                color: white;
+            }
+
+            .bin-button {
+                background-color: green;
+                color: white;
+            }
+
+            .track-button {
+                background-color: white;
+                color: white;
+            }
+
+            .pathDiv {
+                background-color: rgba(0, 163, 255, 0.5);
+            }
+            .box{
+                color: white;
+                text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+                background-color: rgba(0, 163, 255, 0.5);
+            }
+
+            .message{
+                background-color: rgba(0, 163, 255, 1);
+                
+            }
+
+            .minigame-button{
+                background-color: grey;
+                color: white;
+            }
+            .game{
+                background-color: rgba(0, 163, 255, 1);
+            }
+            .start-button{
+                background-color: grey;
+                color: white;
+            }
+
+
+            input[type='text'],
+            select, 
+            textarea {
+                border: 1px solid #ccc;
+                color:black;
+            }
+
+            /* Style the submit button with a specific background color etc */
+            input[type='submit'] {
+                background-color: #049ada;
+                color: white;
+            }
+
+            /* When moving the mouse over the submit button, add a darker green color */
+                input[type='submit']:hover {
+                background-color: #049ada;
+            }
+
+            .contentbox{
+                background-color: {{colour.main}};
+            }
+
+            .bar{
+                background-color: {{colour.main}};
+            }
+
+            .alt_text{
+                color: black;
+            }
+            .subject{
+                color: black;
+            }
+            .streaks {
+                background-color: #000000;
+            }
+            .help{
+                    color: black;
+            }
+            .streaks_small{
+                background-color: #46ff46;
+            }
+
+            .streaks_small{
+                width: {{streak}};
+            }
+            #location-form {
+                background-color: #f1f1f1;
+            }
+
+            #location-form label {
+                color:black;
+            }
+
+            #location-form input,
+            #location-form select {
+                border: 1px solid #ccc;
+                color:black;
+            }
+
+            #submit-location {
+                background-color: #4CAF50;
+                color: white;
+            }
+
+            #location-form input[type="checkbox"] {
+                background-color: #ccc;
+            }
+
+            #location-form input[type="checkbox"]:checked {
+                background-color: #4CAF50;
+            }
+
+        </style>
+        <div class="help alt_text">
+            <a href="/help"><h3 class = "help">Click here for help</h3></a>
+        </div>
+    </head>
+    <body>
+        <!-- Icon Bar (Sidebar - hidden on small screens) -->
+        <nav class="sidebar bar-block small hide-small center">
+            <a
+                href="#"
+                class="bar-icon button padding-large">
+                <i class="fa fa-home xxlarge"></i>
+                <p>Menu</p>
+            </a>
+            <a
+                href="#map_box"
+                class="bar-icon button padding-large">
+                <i class="fa fa-user xxlarge"></i>
+                <p>Map</p>
+            </a>
+            <a
+                href="#leaderboard_box"
+                class="bar-icon button padding-large">
+                <i class="fa fa-user xxlarge"></i>
+                <p>Leaderboard</p>
+            </a>
+            <a
+                href="#shop_box"
+                class="bar-icon button padding-large">
+                <i class="fa fa-user xxlarge"></i>
+                <p>You have {{ points_wallet }} credits</p>
+            </a>
+            <a
+                href="#report_box"
+                class="bar-icon button padding-large">
+                <i class="fa fa-user xxlarge"></i>
+                <p>Report</p>
+            </a>
+            <a
+                href="#settings_box"
+                class="bar-icon button padding-large">
+                <i class="fa fa-user xxlarge"></i>
+                <p>Settings</p>
+            </a>
+            <a
+                href="#contactus_box"
+                class="bar-icon button padding-large">
+                <i class="fa fa-user xxlarge"></i>
+                <p>Contact us</p>
+            </a>
+        </nav>
+        <!-- Navbar on small screens (Hidden on medium and large screens) -->
+        <div
+            class="top hide-large hide-medium"
+            id="myNavbar">
+            <div class="bar center small">
+                <a
+                    href="#"
+                    class="bar-item button">Menu</a>
+                <div id="myLinks">
+                    <a
+                        href="#map_box"
+                        class="bar-item button">Map</a>
+                    <a
+                        href="#leaderboard_box"
+                        class="bar-item button">Leaderboard</a>
+                    <a
+                        href="#shop_box"
+                        class="bar-item button">{{points_wallet}}#</a>
+                    <a
+                        href="#report_box"
+                        class="bar-item button">Report</a>
+                    <a
+                        href="#settings_box"
+                        class="bar-item button">Settings</a>
+                    <a
+                        href="#contactus_box"
+                        class="bar-item button">Contact us</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div
+            class="main-content padding-large"
+            id="main">
+            <!-- Header/Home -->
+            <header
+                class="contentbox container padding-32 center"
+                id="home">
+                <h1 class="jumbo">
+                    <span class="hide-small">Welcome to </span>iWEB
+                    <h2>Hi, {{ display_name }}. You currently have {{ points_wallet }} credits to spend</h2>
+        <h2>This week you've earned {% if points_this_week %}{{ points_this_week }} {% else %} 0 {% endif %} points this week and over your entire time playing over you have earned {% if points_lifetime %}{{ points_lifetime }} {% else %} 0 {% endif %} credits</h2>
+                </h1>
+                <!-- Closest things parsed into the parameter closest_things-->
+                <div
+                    class="centre"
+                    id="closest_things">
+                    <a>Your closest options are:</a>
+                    {% if closest_things %}
+                    <ol>
+                        {% for item in closest_things %}
+                        <li>
+                            {{item.type}}: {{item.building}},
+                            {{item.information}}
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    {% else %}
+                    <p>No data found</p>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Total Stats Section-->
+            <div class= "contentbox justify">
+                <h2> Together everyone using this app has:</h2>
+                <ul>
+                    <li>Saved {{ usage_data.fountains_used}} grams of carbon from not using single use bottles</li>
+                    <li>Taken {{ usage_data.bus_stops_used }} fewer car journeys</li>
+                    <li>Recycled {{ usage_data.bins_used }} times</li> 
+                    <li>In total used environmentally friendly campus services {{ usage_data.total_used }} times</li>
+                </ul>
+            </div>
+            <!-- End Stats Section-->
+            
+            <!-- Map Section -->
+            <div
+                class="contentbox justify"
+                id="map_box">
+                <h2>Map</h2>
+                {% if challenge_done %}
+                <h4>You have no uncomplete challenges</h4>
+                {% else %}
+                <h4>Your challenge is: {{current_challenge}}</h4>
+                {% endif %}
+                <button class="water-fountain-button">
+                    <img
+                        src="{% static 'global/images/bottle.png' %}"
+                        alt="Water fountain icon" />
+                    Water Fountain Locations
+                </button>
+                <button class="bus-stop-button">
+                    <img
+                        src="{% static 'global/images/bus-stop.png' %}"
+                        alt="Bus stop icon" />
+                    Bus Stop Locations
+                </button>
+                <button class="bin-button">
+                    <img
+                        src="{% static 'global/images/recycling.png' %}"
+                        alt="Bin icon" />
+                    Bin Locations
+                </button>
+                <button class="track-button">
+                    <img
+                        src="{% static 'global/images/tracking.png' %}"
+                        alt="Track icon" />
+                    Tracking On
+                </button>
+                <div class="map">
+                    <div class="user">
+                        <script src="{% static 'global/js/maze.js' %}"></script>
+                        <script type="module">
+
+                                //const { getCoordinates } = require('./maze.js');
+                                import { createItems, createMaze, startListeners} from "{% static 'global/js/maze.js' %}";
+                                
+
+                                  
+                                
+                                var user = document.querySelector(".user");
+                                var map = document.querySelector(".map");
+
+                                var mapWidth = map.offsetWidth;
+                                var mapHeight = map.offsetHeight;
+
+                                var width_ratio = mapWidth / 1096;
+                                var height_ratio = mapHeight / 1266;
+
+                                var maze_array = {{ maze|safe }};
+                                var maze = createMaze({{maze|safe}});
+                        
+                                createItems({{ fountain_locations|safe}}, 'bottle');
+                                createItems({{ bus_stop_locations|safe}}, 'bus_stop');
+                                createItems({{ bin_locations|safe}}, 'bin');
+                        
+                                var bottles = document.querySelectorAll('.bottle');
+                                var bus_stops = document.querySelectorAll('.bus_stop');
+                                var bins = document.querySelectorAll('.bin');
+                            
+
+                                startListeners(maze_array);
+                        
+                                function getCookie(name) {
+                                    var cookieValue = null;
+                                    if (document.cookie && document.cookie !== '') {
+                                        var cookies = document.cookie.split(';');
+                                        for (var i = 0; i < cookies.length; i++) {
+                                            var cookie = cookies[i].trim();
+                                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    return cookieValue;
+                                }
+                        
+                        
+                            </script>
+                    </div>
+                </div>
+            </div>
+            <!-- End Map Section-->
+            <!-- Leaderboard Section -->
+            <div
+                class="contentbox justify "
+                id="leaderboard_box">
+                <h2>Leaderboard</h2>
+                <!-- Leaderboard content-->
+                <div
+                    class="centre"
+                    id="container2">
+                    <h2> Top scores this week:</h2>
+                    {% if scores %}
+                    <ol>
+                        {% for item in scores %}
+                        <li>{{ item.username }} {{ item.points_this_week }} {{ item.streak }}</li>
+                        {% endfor %}
+                    </ol>
+                    {% else %}
+                    <p>No data found</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- End Leaderboard Section-->
+            <!-- Points/Shop Section -->
+            <div
+                class="contentbox justify "
+                id="shop_box">
+                <h2>Shop</h2>
+                {% if shop_list %}
+                <h2>Items in the shop:</h2>
+                <table class "item-table">
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Description</th>
+                        <th>Price</th>
+                    </tr>
+                    {% for item in shop_list %}
+                    <tr>
+                        <td>
+                            <button class= "alt_text" name="shopbutton" onClick="buyTheme( '{{ item.name }}', '{{item.price}}' )">
+                                {{ item.name }}
+                            </button>
+                        </td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <script>
+                    // This is unfortunately the most reliable way to do this
+                    function buyTheme(purchase, price){
+                        if (price < {{ points_wallet }} ){
+                            points_cost = -price;
+                            var csrftoken = getCookie('csrftoken');
+                            var request = new XMLHttpRequest();
+                            request.open("POST", "/index", true);
+                            request.setRequestHeader("Content-Type", "application/json");
+                            request.setRequestHeader("X-CSRFToken", csrftoken);
+                            request.send(JSON.stringify({bought : purchase, points : points_cost}));
+                            location.reload();
+                        }
+                    }
+
+                    function getCookie(name) {
+                        var cookieValue = null;
+                        if (document.cookie && document.cookie !== '') {
+                            var cookies = document.cookie.split(';');
+                            for (var i = 0; i < cookies.length; i++) {
+                                var cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+                </script>
+                {% else %}
+                <p> The shop is empty right now </p>
+                {% endif %}
+            </div>
+            <!-- End Points/Shop Section-->
+            <!-- Report Section -->
+            <div
+                class="contentbox justify"
+                id="report_box">
+                <h2>Report</h2>
+
+                <div id="location-form">
+                    {% csrf_token %}
+                    <label for="{{ location_form.latitude.auto_id }}">Latitude:</label>
+                    <input
+                        type="text"
+                        name="{{ location_form.latitude.html_name }}"
+                        id="{{ location_form.latitude.auto_id }}"
+                        value=""
+                        class="latitude-input"
+                    />
+                
+                    <label for="{{ location_form.longitude.auto_id }}">Longitude:</label>
+                    <input
+                        type="text"
+                        name="{{ location_form.longitude.html_name }}"
+                        id="{{ location_form.longitude.auto_id }}"
+                        value=""
+                        class="longitude-input"
+                    />
+                
+                    <label for="{{ location_form.type.auto_id }}">Type:</label>
+                    <select
+                        name="{{ location_form.type.html_name }}"
+                        id="{{ location_form.type.auto_id }}"
+                    >
+                        <option value="Fountain">Fountain</option>
+                        <option value="BusStop">BusStop</option>
+                        <option value="Bin">Bin</option>
+                    </select>
+                
+                    <label for="{{ location_form.building.auto_id }}">Building:</label>
+                    <input
+                        type="text"
+                        name="{{ location_form.building.html_name }}"
+                        id="{{ location_form.building.auto_id }}"
+                        value=""
+                    />
+                
+                    <label for="{{ location_form.information.auto_id }}">Information:</label>
+                    <input
+                        type="text"
+                        name="{{ location_form.information.html_name }}"
+                        id="{{ location_form.information.auto_id }}"
+                        value=""
+                    />
+                
+                    <label class="usable-label" for="{{ location_form.usable.auto_id }}">Usable</label>
+                    <input
+                        type="checkbox"
+                        name="{{ location_form.usable.html_name }}"
+                        id="{{ location_form.usable.auto_id }}"
+                        class="usable-input"
+                    />
+                </div>
+                
+                <button id="submit-location">Submit Location</button>
+                
+                <script src="{% static 'global/js/maze.js' %}"></script>
+                <script type="module">
+                    import { getCookie } from "{% static 'global/js/maze.js' %}";
+
+                    function returnLocation(callback, track = false) {
+                        function success(position) {
+                            var latitude = position.coords.latitude;
+                            var longitude = position.coords.longitude;
+                
+                            // Call the callback function after retrieving the coordinates
+                            callback(latitude, longitude);
+                        }
+                
+                        function error() {
+                            throw new Error("Unable to retrieve your location");
+                        }
+                
+                        var options = {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 0,
+                        };
+                
+                        if (navigator.geolocation) {
+                            if (track) {
+                                return navigator.geolocation.watchPosition(
+                                    success,
+                                    error,
+                                    options
+                                );
+                            } else {
+                                navigator.geolocation.getCurrentPosition(success, error, options);
+                            }
+                        } else {
+                            throw new Error("Geolocation is not supported by this browser.");
+                        }
+                    }
+
+                        // Define a callback function to update the latitude and longitude input fields
+                    function updateInputFields(latitude, longitude) {
+                        // Find the latitude and longitude input fields using their class names
+                        const latitudeInput = document.querySelector(".latitude-input");
+                        const longitudeInput = document.querySelector(".longitude-input");
+
+                        // Fill the input fields with the values returned by getLocation
+                        latitudeInput.value = latitude;
+                        longitudeInput.value = longitude;
+                    }
+
+                    // Pass the callback function to returnLocation
+                    returnLocation(updateInputFields);
+
+                    function submitLocationData() {
+                        const locationForm = document.getElementById("location-form");
+                
+                        // Collect the form data as an object
+                        const formData = {
+                            location: {
+                                latitude: locationForm.querySelector(".latitude-input").value,
+                                longitude: locationForm.querySelector(".longitude-input").value,
+                                type: locationForm.querySelector("#id_type").value,
+                                building: locationForm.querySelector("#id_building").value,
+                                information: locationForm.querySelector("#id_information").value,
+                                usable: locationForm.querySelector(".usable-input").checked,
+                            },
+                        };
+                
+                        // Send the form data as JSON to the main view
+                        const csrfToken = getCookie("csrftoken");
+                
+                        fetch(window.location.href, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRFToken": csrfToken,
+                            },
+                            body: JSON.stringify(formData),
+                        })
+                            .then((response) => {
+                                if (response.ok) {
+                                    window.location.href = window.location.href + "?submitted=True";
+                                } else {
+                                    console.error("Error submitting location.");
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error submitting location: ", error);
+                            });
+                    }
+                
+                    document.getElementById("submit-location").addEventListener("click", submitLocationData);
+                </script>
+            </div>
+            <!-- End Report Section-->
+            <!-- Settings Section -->
+            <div
+                class="contentbox justify"
+                id="settings_box">
+                <h2>Settings</h2>
+                {% if is_staff %}
+                    <div class = "justify right">
+                        <button class="alt_text" onClick="resetUsers()">RESET WEEKLY STREAKS</button>
+                        <script>
+                            // This is unfortunately the most reliable way to do this
+                            function resetUsers(){
+                                var csrftoken = getCookie('csrftoken');
+                                var request = new XMLHttpRequest();
+                                request.open("POST", "/index", true);
+                                request.setRequestHeader("Content-Type", "application/json");
+                                request.setRequestHeader("X-CSRFToken", csrftoken);
+                                request.send(JSON.stringify({ leaderboard_reset : 0}));
+                                location.reload();
+                            }
+                            function getCookie(name) {
+                                var cookieValue = null;
+                                if (document.cookie && document.cookie !== '') {
+                                    var cookies = document.cookie.split(';');
+                                    for (var i = 0; i < cookies.length; i++) {
+                                        var cookie = cookies[i].trim();
+                                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                            break;
+                                        }
+                                    }
+                                }
+                                return cookieValue;
+                            }
+                        </script>
+                    </div>
+                    {% endif %}
+                    <ul>
+                        {% for item in themes %}
+                        <button class= "alt_text" name="themebutton" onClick="setTheme( '{{ item }}' )">
+                        {{ item }}
+                        </button>
+                        {% endfor %}
+                    </ul>
+                    <script>
+                        // This is unfortunately the most reliable way to do this
+                        function setTheme(newTheme){
+                            var csrftoken = getCookie('csrftoken');
+                            var request = new XMLHttpRequest();
+                            request.open("POST", "/index", true);
+                            request.setRequestHeader("Content-Type", "application/json");
+                            request.setRequestHeader("X-CSRFToken", csrftoken);
+                            request.send(JSON.stringify({newtheme : newTheme}));
+                            location.reload();
+                        }
+                        function getCookie(name) {
+                            var cookieValue = null;
+                            if (document.cookie && document.cookie !== '') {
+                                var cookies = document.cookie.split(';');
+                                for (var i = 0; i < cookies.length; i++) {
+                                    var cookie = cookies[i].trim();
+                                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                        break;
+                                    }
+                                }
+                            }
+                            return cookieValue;
+                        }
+                    </script>
+            </div>
+            <!-- End Settings Section-->
+            <!-- Contact Section -->
+            <div
+                class="contentbox justify"
+                id="contactus_box">
+                <h2>Contact Me</h2>
+                <div class="container">
+                    <form
+                        action="https://formsubmit.co/exetertestcontacts@gmail.com"
+                        method="POST">
+                        <ul class="contact-list">
+                            <li>
+                                <label for="fname">First Name</label>
+                                <input
+                                    class="alt_text"
+                                    type="text"
+                                    id="fname"
+                                    name="firstname"
+                                    placeholder="Your name.."
+                                    required />
+                            </li>
+                            <li>
+                                <label for="email">Email</label>
+                                <input
+                                    class="alt_text"
+                                    type="text"
+                                    id="email"
+                                    name="email"
+                                    placeholder="Your email address.."
+                                    required />
+                            </li>
+                            <li>
+                                <label for="subject">Report</label>
+                            </li>
+                            <li>
+                                <textarea
+                                    class="alt_text"
+                                    id="subject"
+                                    class="subject"
+                                    name="subject"
+                                    placeholder="Report a change..."
+                                    required></textarea>
+                            </li>
+                            <li>
+                                <button class = "alt_text" type="submit">Submit</button>
+                            </li>
+                        </ul>
+                    </form>
+                </div>
+            </div>
+            <!-- End Contact Section -->
+
+            <!-- Streaks large screen -->
+            <div class="streaks hide-small">
+                <h1>{{streak}}</h1>
+            </div>
+            <!-- Streaks end -->
+
+            <!-- Streaks Small screen-->
+            <div class="streaks_small hide-medium hide-large">
+                <!-- Not much needs to be here -->
+            </div>
+            <!-- Streaks end -->
+        </div>
+        <!-- END PAGE CONTENT -->
+    </body>
+</html>
